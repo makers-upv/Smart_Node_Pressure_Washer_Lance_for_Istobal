@@ -8,4 +8,4 @@
 ## Comunicación
 ### nRF24L01+
 
-![](resources/img/nRF24L01%2B%20-%20Modulo%20radiofrecuencia.jpg)
+![](resources/img/nRF24L01%2B_Modulo%20radiofrecuencia.jpg)
