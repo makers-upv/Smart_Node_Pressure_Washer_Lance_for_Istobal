@@ -3,4 +3,4 @@
 ## Sensores
 ### ADPS 9660
 
-![](resources\img\adps9660.jpg)
+![](resources/img/adps9660.jpg)
