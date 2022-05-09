@@ -1,0 +1,1 @@
+resources -> carpetas de recursos(Esquemas, imagenes, videos, etc)
