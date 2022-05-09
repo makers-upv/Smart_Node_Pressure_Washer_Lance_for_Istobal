@@ -5,6 +5,10 @@
 
 ![](resources/img/adps9660.jpg)
 
+## Pantalla
+### Adafruit SSD1351
+
+![](resources/img/SSD1351.jpg)
 ## Comunicación
 ### nRF24L01+
 
