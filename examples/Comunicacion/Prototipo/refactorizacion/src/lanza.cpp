@@ -5,7 +5,6 @@
   #include <printf.h>
   #include <RF24.h>
   #include <RF24_config.h>
-  #include <test.h>
 //Libreria sensor gestos:
   #include <Arduino_APDS9960.h>
   int valor = 0;

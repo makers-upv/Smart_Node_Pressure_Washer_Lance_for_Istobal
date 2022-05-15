@@ -1,17 +1,19 @@
 //Librerias en uso:
-  #include <Arduino.h>
-  #include <SPI.h>
-  #include <nRF24L01.h>
-  #include <printf.h>
-  #include <RF24.h>
-  #include <RF24_config.h>
-//Variables referentes a la comunicación
-  const int IRQ = 2, CE = 9, CSN = 10;    //Declaramos en variables constantes los pines de CE, CSN y IRQ
+    #include <Arduino.h>
+    #include <SPI.h>
+    #include <nRF24L01.h>
+    #include <printf.h>
+    #include <RF24.h>
+    #include <RF24_config.h>
+//Lista de entradas:
+  const int IRQ = 2, CE = 9, CSN = 10;
+//Variable fijas:
   const uint64_t canal = 0xE8E8F0F0E1LL;  //Canal de comunicación
   const uint32_t msgOK = 0x01FF00DD;      //Variable equivalente a que un mensaje es correcto
+//Variables referentes a la comunicación
   RF24 RF (CE,CSN);                       //Declaramos la variable del canal, como en los servos de arduino
 //Variables de código
-int t1=500, SWT = 7, L1 = 3, L2 = 4, L3 = 5;
+int t1=500;
 /*
 t1 es la variable que hace referencia al temportizador que usamos en el void loop
 SWT es la variable que hace referencia al pin que usamos como entrada para las pruebas
@@ -31,22 +33,16 @@ void setup() {
   RF.openWritingPipe(canal);      //Iniciamos la escritura por el canal RF
   RF.openReadingPipe(1, canal);   //Abrimos la escucha por el canal RF
   RF.startListening();            //Empezamos a escuchar
-  pinMode(SWT, INPUT_PULLUP);     //Declaramos el pin del SWT como entrada pullup
   RF.maskIRQ(1,1,0);              //Solo permitimos que se active el pin de interrupcion cuando recibe datos
-  attachInterrupt(digitalPinToInterrupt(IRQ), InterrupcionMensaje, FALLING);  //Interrupir el codigo cuando se active el pin 5 por una bajada de la señal
-  pinMode(L1, OUTPUT);  pinMode(L2, OUTPUT);  pinMode(L3, OUTPUT);            //Declaramos los pines de las salidas para los leds
+  attachInterrupt(digitalPinToInterrupt(IRQ), InterrupcionMensaje, FALLING);  //Interrupir el codigo cuando se active el pin 5 por una bajada de la señal}
 }
-
 void loop() {
   //Serial.println("Me estoy esperando hasta recibir un mensaje");
-  //if (digitalRead(SWT) == LOW)  EnviarRF(0xBACAFBCD); //Prueba de envio bidireccional, ignorar en la demo
-  digitalWrite(L1, bitRead(estado,8));  //Damos al led 1 el valor correspondiente al primer bit de la variable entera que contiene el valor del contador
-  digitalWrite(L2, bitRead(estado,9));  //Damos al led 2 el valor correspondiente al segundo bit de la variable entera que contiene el valor del contador
-  digitalWrite(L3, bitRead(estado,10)); //Damos al led 3 el valor correspondiente al tercer bit de la variable entera que contiene el valor del contador
   //Serial.println(estado,HEX);
   delay(t1);                                  //Esperamos un pequeño tiempo
 }
 
+//Funciones:
 void EnviarRF(uint32_t m){          //Función que enviara el mensaje que le cargemos
     RF.stopListening();     //Paramos de escuchar el canal
     RF.write(&m,sizeof(m)); //Escribimos en el canal de RF el valor introducido en la función
