@@ -6,11 +6,9 @@ void setup(){
   //Comunicacion
   ConfigurarComunicacion();
   //Sensor gestos
-  ConfigurarGestos();
+  //ConfigurarGestos();
 }
 
 void loop() {
-  gesto();
-  if (Seguridad == 1) EnviarRF(msg.p);        //Si la variable de mensaje sigue activa volvemos a enviar el mensaje por si se ha perdido
-  delay(t1);                                  //Esperamos un pequeño tiempo
+  EnviarRF(0x12345678);        //Si la variable de mensaje sigue activa volvemos a enviar el mensaje por si se ha perdido
 }
