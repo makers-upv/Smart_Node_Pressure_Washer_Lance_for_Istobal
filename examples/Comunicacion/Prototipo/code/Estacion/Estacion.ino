@@ -1,30 +1,30 @@
 //Librerias en uso:
-  #include <Arduino.h>          //Libreria de arduino
-  #include <SPI.h>              //libreria comunicacion SPI
-  #include <nRF24L01.h>         //Libreria de la parte de comunicacion
-  #include <printf.h>           //Libreria de la parte de comunicacion
-  #include <RF24.h>             //Libreria de la parte de comunicacion
-  #include <RF24_config.h>      //Libreria de la parte de comunicacion
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <printf.h>
+#include <RF24.h>
+#include <RF24_config.h>
+//Variables referentes a la comunicación
+const int IRQ = 3, CE = 9, CSN = 10;             //Declaramos en variables constantes los pines de CE y CSN
+const uint64_t canal = 0xE8E8F0F0E1LL;  //Canal de comunicación
+RF24 RF (CE, CSN);                      //Declaramos la variable del canal, como en los servos de arduino
+//Variables de código
+int t1 = 5000;
+union UnionMsg {
+  uint32_t p;
+  uint8_t v[4];
+} msg;
 
-//Nuestras librerias:
-  #include <com.hpp>
+void setup() {
+  Serial.begin(115200);               //Iniciamos el buffer de comunicacion serie a 9600 baudios
+  ConfigurarComuniacion();
+}
 
-#pragma region Variables_Comuniacion  
-  //Variables referentes a la comunicación
-  const int IRQ = 3, CE = 9, CSN = 10;    //Declaramos en variables constantes los pines de CE, CSN y IRQ
-  const uint64_t canal = 0xE8E8F0F0E1LL;  //Canal de comunicación
-  RF24 RF (CE,CSN);                       //Declaramos la variable del canal de comunicacion, como en los servos de arduino
-  //Variables de código
-  int t1=50, Seguridad = 0, cuenta = 0;
-  //Uniones
-  union UnionMsg{ //Union para poder ver unicamente cada una de las 4 parejas de valores hexadecimales que componen el mensaje que se envia
-    uint32_t p;
-    uint8_t v[4];
-  } msg;
-#pragma endregion
-
-#pragma region Funciones_de_comuniacion
-  void ConfigurarComuniacion() {
+void loop() {
+  Serial.println("Me estoy esperando hasta recibir un mensaje");
+  delay(t1);
+}
+void ConfigurarComuniacion() {
   msg.p = 0x0;                    //Mensaje que enviaremos para las pruebas
   RF.begin();                     //Iniciamos la comunicación RF
   RF.openWritingPipe(canal);      //Iniciamos la escritura por el canal RF
@@ -63,5 +63,3 @@ void MostrarMensaje(uint32_t mensaje, int n) { //Función que muestra por el pue
     Serial.println(""); //Hacemos un salto de linea
   }
 }
-#pragma endregion
-

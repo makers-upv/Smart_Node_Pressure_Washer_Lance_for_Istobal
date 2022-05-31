@@ -20,11 +20,11 @@ void gesto(){
     switch (gesture) {
       case GESTURE_UP:
         Serial.println("UP");
-        SubirCuenta();
+        //SubirCuenta();
         break;
       case GESTURE_DOWN:
         Serial.println("DOWN");
-        BajarCuenta();
+        //BajarCuenta();
         break;
       case GESTURE_LEFT:
         Serial.println("LEFT");

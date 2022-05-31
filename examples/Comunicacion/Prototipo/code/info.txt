@@ -1,0 +1,1 @@
+Codigos para verificar que va todo OK con interrupciones, falta introducir el CRC y las comprobaciones para cuando se pierde el mensaje.
