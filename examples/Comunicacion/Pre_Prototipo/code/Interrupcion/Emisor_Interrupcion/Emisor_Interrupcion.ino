@@ -25,10 +25,8 @@ void setup() {
 }
 
 void loop() {
-  if (digitalRead(SWT) == LOW){
     EnviarRF(msg.p);
     MostrarMensaje(msg.p);
-  }
   delay(t1);
 }
 
