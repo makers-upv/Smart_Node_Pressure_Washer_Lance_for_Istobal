@@ -5,8 +5,8 @@
 SdFat                SD;         // SD card filesystem
 Adafruit_ImageReader reader(SD); // Image-reader object, pass in SD filesys
 
-Adafruit_ST7735 tft = Adafruit_ST7735(tft_CS, tft_DC, tft_RST);
-ImageReturnCode stat; // Status from image-reading functions
+Adafruit_ST7735 tft = Adafruit_ST7735(tft_CS, tft_DC, TFT_MOSI, TFT_SCLK, tft_RST);
+ImageReturnCode img_stat; // Status from image-reading functions
 
 void Screen :: erasePrevDigit(int8_t dig, int16_t background) {
   //Get starting position
@@ -64,7 +64,7 @@ void Screen :: showTimer() {
 
 
 void Screen :: begin() {
-  Serial.begin(9600);
+  //Serial.begin(9600);
   #if !defined(ESP32)
         while (!Serial);      // Wait for Serial Monitor before continuing
   #endif
@@ -81,14 +81,14 @@ void Screen :: begin() {
   Serial.println(F("[Screen] OK"));
 
   tft.fillScreen(WHITE); //Fills the screen white so no residual images in the screen memory are seen
-  stat = reader.drawBMP("/Pantalla_1.bmp", tft, 0, 0); //Shows the first initial screen (Istobal logo)
+  img_stat = reader.drawBMP("/Pantalla_1.bmp", tft, 0, 0); //Shows the first initial screen (Istobal logo)
 }
 
 void Screen :: nextStartBMP(){
   //Updates to next initialisation screen
   startScreenNumber++;
   startScreenBMPName[10] = startScreenNumber + 48;
-  stat = reader.drawBMP(startScreenBMPName, tft, 0, 0);
+  img_stat = reader.drawBMP(startScreenBMPName, tft, 0, 0);
 }
 
 void Screen :: setTimer(int16_t atimerxPos, int16_t atimeryPos, uint16_t atimerTextColor, uint16_t atimerBackgroundColor) {
@@ -171,7 +171,7 @@ void Screen :: changeModeTo(int amode) {
 void Screen :: setTemplate(int templt){
   templtPath[13] = templt + 48; //Changes template path to the requiered one
   tft.fillScreen(BLACK);
-  stat = reader.drawBMP(templtPath, tft, 0, 0); //Shows template on the screen
+  img_stat = reader.drawBMP(templtPath, tft, 0, 0); //Shows template on the screen
 }
 
 void Screen :: setPrice(int16_t apricexPos, int16_t apriceyPos, uint16_t apriceTextColor, uint16_t apriceBackgroundColor){

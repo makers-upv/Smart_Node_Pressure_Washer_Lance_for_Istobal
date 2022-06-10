@@ -52,11 +52,13 @@ void setup() {
 
   Serial.println("Device initialized correctly!");
 
+  device.setLedBoost(LED_BOOST_300);
+
   // Gesture engine settings
   device.enableGesturesEngine(); // enable the gesture engine
-  device.setGestureProxEnterThreshold(25); // Enter the gesture engine only when the proximity value 
+  device.setGestureProxEnterThreshold(0); // Enter the gesture engine only when the proximity value 
   // is greater than this value proximity value ranges between 0 and 255 where 0 is far away and 255 is very near.
-  device.setGestureExitThreshold(20); // Exit the gesture engine only when the proximity value is less 
+  device.setGestureExitThreshold(0); // Exit the gesture engine only when the proximity value is less 
   // than this value.
   device.setGestureExitPersistence(EXIT_AFTER_4_GESTURE_END); // Exit the gesture engine only when 4
   // consecutive gesture end signals are fired (distance is greater than the threshold)

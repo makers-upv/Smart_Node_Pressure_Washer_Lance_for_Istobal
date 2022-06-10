@@ -2,6 +2,7 @@
 
 
 void setup(void) {
+  Serial.begin(115200);
   Screen screen;
   screen.begin();
   delay(1000);

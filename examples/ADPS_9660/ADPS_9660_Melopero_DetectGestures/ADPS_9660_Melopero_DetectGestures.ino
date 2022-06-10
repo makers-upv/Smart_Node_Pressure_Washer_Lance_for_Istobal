@@ -93,6 +93,8 @@ void loop() {
 
     if (device.parsedUpDownGesture != NO_GESTURE || device.parsedLeftRightGesture != NO_GESTURE)
         Serial.println();
+
+    device.resetGestureEngineInterruptSettings();
   }
 
 }

@@ -22,12 +22,12 @@
 #define SCREEN_WIDTH  128
 #define SCREEN_HEIGHT 128
 
-#define SD_CS    4 // SD card select pin
-#define tft_CS   10 // tft select pin
-#define tft_DC   8 // tft display/command pin
-#define tft_RST  9 // Or set to -1 and connect to Arduino RESET pin
-
-
+#define SD_CS    27 // SD card select pin
+#define tft_CS   15 // tft select pin
+#define tft_DC   4 // tft display/command pin
+#define tft_RST  2 // Or set to -1 and connect to Arduino RESET pin
+#define TFT_MOSI 12  // Data out
+#define TFT_SCLK 14  // Clock out
 
 class Screen {
   private:
