@@ -4,7 +4,7 @@
 #include <printf.h>
 #include <RF24.h>
 #include <RF24_config.h>
-//Variables referentes a la comunicació
+//Variables referentes a la comunicación
 const int IRQ = 3, CE = 4, CSN = 5;             //Declaramos en variables constantes los pines de CE y CSN
 const uint64_t canal = 0xE8E8F0F0E1LL;  //Canal de comunicación
 RF24 RF (CE, CSN);                      //Declaramos la variable del canal, como en los servos de arduino
@@ -16,12 +16,12 @@ union UnionMsg {
 } msg;
 
 void setup() {
-  Serial.begin(115200);             //Iniciamos el buffer de comunicacion serie a 9600 baudios
+  Serial.begin(115200);               //Iniciamos el buffer de comunicacion serie a 9600 baudios
   ConfigurarComuniacion();
 }
 
 void loop() {
-  EnviarRF(0x112233DD);
+  Serial.println("Me estoy esperando hasta recibir un mensaje");
   delay(t1);
 }
 void ConfigurarComuniacion() {

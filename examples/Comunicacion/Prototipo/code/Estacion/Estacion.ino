@@ -5,7 +5,7 @@
 #include <RF24.h>
 #include <RF24_config.h>
 //Variables referentes a la comunicación
-const int IRQ = 3, CE = 9, CSN = 10;             //Declaramos en variables constantes los pines de CE y CSN
+const int IRQ = 8, CE = 9, CSN = 10;             //Declaramos en variables constantes los pines de CE y CSN
 const uint64_t canal = 0xE8E8F0F0E1LL;  //Canal de comunicación
 RF24 RF (CE, CSN);                      //Declaramos la variable del canal, como en los servos de arduino
 //Variables de código
@@ -21,7 +21,7 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("Me estoy esperando hasta recibir un mensaje");
+  EnviarRF(0x112233DD);
   delay(t1);
 }
 void ConfigurarComuniacion() {

@@ -49,7 +49,7 @@ Distributed as-is; no warranty is given.
 #include <SparkFun_APDS9960.h>
 
 // Pins
-#define APDS9960_INT    34 // Needs to be an interrupt pin
+#define APDS9960_INT    3 // Needs to be an interrupt pin
 
 // Constants
 
@@ -109,18 +109,18 @@ void handleGesture() {
       case DIR_DOWN:
         Serial.println("DOWN");
         break;
-      case DIR_LEFT:
-        Serial.println("LEFT");
-        break;
-      case DIR_RIGHT:
-        Serial.println("RIGHT");
-        break;
-      case DIR_NEAR:
-        Serial.println("NEAR");
-        break;
-      case DIR_FAR:
-        Serial.println("FAR");
-        break;
+//      case DIR_LEFT:
+//        Serial.println("LEFT");
+//        break;
+//      case DIR_RIGHT:
+//        Serial.println("RIGHT");
+//        break;
+//      case DIR_NEAR:
+//        Serial.println("NEAR");
+//        break;
+//      case DIR_FAR:
+//        Serial.println("FAR");
+//        break;
       default:
         Serial.println("NONE");
     }

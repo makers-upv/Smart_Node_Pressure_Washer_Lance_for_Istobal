@@ -26,7 +26,7 @@ Melopero_APDS9960 device;
 
 bool interruptOccurred = false;
 //This is the pin that will listen for the hardware interrupt.
-const byte interruptPin = 34;
+const byte interruptPin = 3;
 
 void interruptHandler(){
   interruptOccurred = true;
@@ -53,33 +53,34 @@ void setup() {
   Serial.println("Device initialized correctly!");
 
   device.setLedBoost(LED_BOOST_300);
+  device.setLedDrive(LED_DRIVE_100_mA);
 
   // Gesture engine settings
   device.enableGesturesEngine(); // enable the gesture engine
-  device.setGestureProxEnterThreshold(0); // Enter the gesture engine only when the proximity value 
+  device.setGestureProxEnterThreshold(50); // Enter the gesture engine only when the proximity value 
   // is greater than this value proximity value ranges between 0 and 255 where 0 is far away and 255 is very near.
-  device.setGestureExitThreshold(0); // Exit the gesture engine only when the proximity value is less 
+  device.setGestureExitThreshold(50); // Exit the gesture engine only when the proximity value is less 
   // than this value.
-  device.setGestureExitPersistence(EXIT_AFTER_4_GESTURE_END); // Exit the gesture engine only when 4
+  device.setGestureExitPersistence(EXIT_AFTER_1_GESTURE_END); // Exit the gesture engine only when 4
   // consecutive gesture end signals are fired (distance is greater than the threshold)
 
   // Gesture engine interrupt settings
   device.enableGestureInterrupts();
-  device.setGestureFifoThreshold(FIFO_INT_AFTER_16_DATASETS); // trigger an interrupt as soon as there are 16 datasets in the fifo
+  device.setGestureFifoThreshold(FIFO_INT_AFTER_1_DATASET); // trigger an interrupt as soon as there are 16 datasets in the fifo
   // To clear the interrupt pin we have to read all datasets that are available in the fifo.
   // Since it takes a little bit of time to read alla these datasets the device may collect 
   // new ones in the meantime and prevent us from clearing the interrupt ( since the fifo 
   // would not be empty ). To prevent this behaviour we tell the device to enter the sleep 
   // state after an interrupt occurred. The device will exit the sleep state when the interrupt
   // is cleared.
-  device.setSleepAfterInterrupt(true);
+//  device.setSleepAfterInterrupt(true);
 
   //Next we want to setup our interruptPin to detect the interrupt and to call our
   //interruptHandler function each time an interrupt is triggered.
   pinMode(interruptPin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(interruptPin), interruptHandler, FALLING);
 
-  device.wakeUp(); // wake up the device
+//  device.wakeUp(); // wake up the device
 }
 
 void loop() {

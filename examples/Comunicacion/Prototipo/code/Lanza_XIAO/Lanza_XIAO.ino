@@ -9,7 +9,7 @@ const int IRQ = 3, CE = 4, CSN = 5;             //Declaramos en variables consta
 const uint64_t canal = 0xE8E8F0F0E1LL;  //Canal de comunicación
 RF24 RF (CE, CSN);                      //Declaramos la variable del canal, como en los servos de arduino
 //Variables de código
-int t1 = 5000;
+int t1 = 500;
 union UnionMsg {
   uint32_t p;
   uint8_t v[4];
@@ -21,7 +21,8 @@ void setup() {
 }
 
 void loop() {
-  EnviarRF(0x112233DD);
+  Serial.println("EStoy esperando");
+  //EnviarRF(0x112233DD);
   delay(t1);
 }
 void ConfigurarComuniacion() {
