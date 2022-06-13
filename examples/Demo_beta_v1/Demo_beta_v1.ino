@@ -1,17 +1,48 @@
-#include <tftLibrary.hpp>
+#include "tftLibrary.hpp"
 #include "Melopero_APDS9960.h"
 
-Melopero_APDS9960 device;
 
-bool interruptOccurred = false;
+Melopero_APDS9960 device_Gestos;
+
+
+enum estados{SOPORTE, STANDBY, LAVADO};
+enum eventos{CARGANDO,NO_CARGANDO,SALDO,START,NEXT,BACK,END};
+
+struct maquina_estados_struct
+{
+estados estado;         //Estado actual en el que nos encontramos
+eventos evento;         //Evento que acaba de suceder
+bool flag_evento;    //Flag de que hay un evento que no se ha procesado
+};
+
+maquina_estados_struct Maquina_Estados = {SOPORTE,CARGANDO,false}; //Estructura que nos almacenará las variables de la maquina de estado.
+
+
+bool interruptOccurred_Gestos = false;
 //This is the pin that will listen for the hardware interrupt.
-const byte interruptPin = 34;
+const byte interruptPin_Gestos = 34;
+const byte interruptPin_Cargando = 35;
+const byte interruptPin_Gesture_but = 32;
 
-void interruptHandler() {
-  interruptOccurred = true;
+void Proceso_Maquina(maquina_estados_struct *Maquina_Estados_puntero);
+
+void interruptHandler_Gestos() {
+  interruptOccurred_Gestos = true;
+}
+void interruptHandler_Cargando() {
+  
+  Maquina_Estados.evento = NO_CARGANDO;
+  Maquina_Estados.flag_evento = true;
+
+}
+void interruptHandler_Gesture_but() {
+  Maquina_Estados.evento = START;
+  Maquina_Estados.flag_evento = true;
 }
 
 Screen screen;
+
+
 
 
 void setup() {
@@ -37,58 +68,73 @@ void setup() {
   int8_t status = NO_ERROR;
 
   Wire.begin();
-  status = device.initI2C(0x39, Wire); // Initialize the comunication library
+  status = device_Gestos.initI2C(0x39, Wire); // Initialize the comunication library
   if (status != NO_ERROR) {
     Serial.println("Error during initialization");
     while (true);
   }
-  status = device.reset(); // Reset all interrupt settings and power off the device
+  status = device_Gestos.reset(); // Reset all interrupt settings and power off the device
   if (status != NO_ERROR) {
     Serial.println("Error during reset.");
     while (true);
   }
 
-  Serial.println("Device initialized correctly!");
+  Serial.println("device_Gestos initialized correctly!");
 
-  device.setLedBoost(LED_BOOST_300);
+  device_Gestos.setLedBoost(LED_BOOST_300);
 
   // Gesture engine settings
-  device.enableGesturesEngine(); // enable the gesture engine
-  device.setGestureProxEnterThreshold(0); // Enter the gesture engine only when the proximity value
+  device_Gestos.enableGesturesEngine(); // enable the gesture engine
+  device_Gestos.setGestureProxEnterThreshold(50); // Enter the gesture engine only when the proximity value
   // is greater than this value proximity value ranges between 0 and 255 where 0 is far away and 255 is very near.
-  device.setGestureExitThreshold(0); // Exit the gesture engine only when the proximity value is less
+  device_Gestos.setGestureExitThreshold(0); // Exit the gesture engine only when the proximity value is less
   // than this value.
-  device.setGestureExitPersistence(EXIT_AFTER_4_GESTURE_END); // Exit the gesture engine only when 4
+  device_Gestos.setGestureExitPersistence(EXIT_AFTER_4_GESTURE_END); // Exit the gesture engine only when 4
   // consecutive gesture end signals are fired (distance is greater than the threshold)
 
   // Gesture engine interrupt settings
-  device.enableGestureInterrupts();
-  device.setGestureFifoThreshold(FIFO_INT_AFTER_16_DATASETS); // trigger an interrupt as soon as there are 16 datasets in the fifo
+  device_Gestos.enableGestureInterrupts();
+  device_Gestos.setGestureFifoThreshold(FIFO_INT_AFTER_16_DATASETS); // trigger an interrupt as soon as there are 16 datasets in the fifo
   // To clear the interrupt pin we have to read all datasets that are available in the fifo.
   // Since it takes a little bit of time to read alla these datasets the device may collect
   // new ones in the meantime and prevent us from clearing the interrupt ( since the fifo
   // would not be empty ). To prevent this behaviour we tell the device to enter the sleep
   // state after an interrupt occurred. The device will exit the sleep state when the interrupt
   // is cleared.
-  device.setSleepAfterInterrupt(true);
+  device_Gestos.setSleepAfterInterrupt(true);
 
   //Next we want to setup our interruptPin to detect the interrupt and to call our
-  //interruptHandler function each time an interrupt is triggered.
-  pinMode(interruptPin, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(interruptPin), interruptHandler, FALLING);
+  //interruptHandler_Gestos function each time an interrupt is triggered.
+  pinMode(interruptPin_Gestos, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(interruptPin_Gestos), interruptHandler_Gestos, FALLING);
 
-  device.wakeUp(); // wake up the device
+  device_Gestos.wakeUp(); // wake up the device
+///// Config Interrup Buttons ////////
+/// Cargador  ///
+  pinMode(interruptPin_Cargando, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(interruptPin_Cargando), interruptHandler_Cargando, FALLING);
+/// Gestos  ///
+  pinMode(interruptPin_Gesture_but, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(interruptPin_Gesture_but), interruptHandler_Gesture_but, FALLING);
 
 }
 
 void loop() {
+
+  if(Maquina_Estados.flag_evento == true){
+    Maquina_Estados.flag_evento = false;
+    Proceso_Maquina(&Maquina_Estados);
+  }
+
+/*
+  
   for (int i = 1; i < 1000; i++) {
     screen.updateScreen();
     screen.changeModeTo(i % 5 + 1);
 
-    if (interruptOccurred) {
+    if (interruptOccurred_Gestos) {
       // clear interrupt
-      interruptOccurred = false;
+      interruptOccurred_Gestos = false;
 
       // The interrupt is cleared by reading all available datasets in the fifo
       // When an interrupt occurs we know we have 16 datasets in the fifo, by analyzing
@@ -111,25 +157,103 @@ void loop() {
       //
       // The confidence tells us the minimum amount of "detected gesture samples" needed for an axis to tell that a gesture has been detected on that axis:
       // How its used in the source code: if (detected_up_gesture_samples > detected_down_gesture_samples + confidence) gesture_up_down = GESTURE_UP
-      device.parseGestureInFifo();
+      device_Gestos.parseGestureInFifo();
 
-      if (device.parsedUpDownGesture != NO_GESTURE || device.parsedLeftRightGesture != NO_GESTURE)
+      if (device_Gestos.parsedUpDownGesture != NO_GESTURE || device_Gestos.parsedLeftRightGesture != NO_GESTURE)
         Serial.print("Gesture : ");
 
-      if (device.parsedUpDownGesture == UP_GESTURE)
+      if (device_Gestos.parsedUpDownGesture == UP_GESTURE)
         Serial.print("UP ");
-      else if (device.parsedUpDownGesture == DOWN_GESTURE)
+      else if (device_Gestos.parsedUpDownGesture == DOWN_GESTURE)
         Serial.print("DOWN ");
 
-      if (device.parsedLeftRightGesture == LEFT_GESTURE)
+      if (device_Gestos.parsedLeftRightGesture == LEFT_GESTURE)
         Serial.print("LEFT ");
-      else if (device.parsedLeftRightGesture == RIGHT_GESTURE)
+      else if (device_Gestos.parsedLeftRightGesture == RIGHT_GESTURE)
         Serial.print("RIGHT ");
 
-      if (device.parsedUpDownGesture != NO_GESTURE || device.parsedLeftRightGesture != NO_GESTURE)
+      if (device_Gestos.parsedUpDownGesture != NO_GESTURE || device_Gestos.parsedLeftRightGesture != NO_GESTURE)
         Serial.println();
     }
 
     delay(1000);
   }
+
+  */
+}
+
+
+
+void Proceso_Maquina(maquina_estados_struct* Maquina_Estados_puntero){
+  switch (Maquina_Estados_puntero->estado) {
+    case SOPORTE:
+        switch (Maquina_Estados_puntero->evento) 
+        { 
+            case NO_CARGANDO:
+             Serial.print("pues va i todo_NO_CARGANDO ");
+            break;
+
+
+            case START:
+             Serial.print("pues va i todo_START ");
+            break;
+            default:
+
+            break;
+
+        }
+    break;
+
+    case STANDBY:
+            switch (Maquina_Estados_puntero->evento) 
+        { 
+            case CARGANDO:
+
+            break;
+
+            case SALDO:
+
+            break;
+
+            case START:
+
+            break;
+
+            default:
+
+            break;
+
+        }
+
+    break;
+
+    case LAVADO:
+            switch (Maquina_Estados_puntero->evento) 
+        { 
+
+            case BACK:
+
+            break;
+
+            case NEXT:
+
+            break;
+
+            default:
+
+            break;
+
+        }
+
+
+    break;
+
+    default:
+
+    break;
+
+  }
+
+
+
 }
