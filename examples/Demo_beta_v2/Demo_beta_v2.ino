@@ -45,12 +45,12 @@ void interruptHandler_Cargando() {
 }
 
 void interruptHandler_Gesture() {
-  Maquina_Estados.evento = GESTO;
+  //LeerGesto();
   Maquina_Estados.flag_evento = true;
 }
 
 void interruptHandler_Timer2() {
-  Maquina_Estados.evento = TIEMPO;
+  Maquina_Estados.evento = TIEMPO;    
   Maquina_Estados.flag_evento = true;
 }
 
@@ -77,7 +77,7 @@ void setup() {
   screen.begin();
   //Gestos
   pinMode(APDS9960_INT, INPUT);
-  attachInterrupt(digitalPinToInterrupt(APDS9960_INT) , interruptHandler_Gesture, FALLING);
+  attachInterrupt(APDS9960_INT, interruptHandler_Gesture, FALLING);
   if ( apds.init() ) Serial.println(F("APDS-9960 initialization complete"));
   else     Serial.println(F("Something went wrong during APDS-9960 init!"));
   if ( apds.enableGestureSensor(true) )    Serial.println(F("Gesture sensor is now running"));
@@ -90,20 +90,21 @@ void loop() {
   //Maquina de estados
   if (Maquina_Estados.flag_evento == true) {
     Maquina_Estados.flag_evento = false;
-    if (Maquina_Estados.estado == LAVADO && Maquina_Estados.evento == GESTO) LeerGesto();
+    //if (Maquina_Estados.estado == LAVADO && Maquina_Estados.evento == GESTO) 
     Proceso_Maquina(&Maquina_Estados);
   }
 
   if (millis() > tnext) {
-    Serial.println(".");
+    //Serial.println(".");
     Serial.println(Maquina_Estados.estado);
     tnext += tprint;
   }
 }
 
 void LeerGesto() {
-  detachInterrupt(digitalPinToInterrupt(APDS9960_INT));
+  detachInterrupt(APDS9960_INT);
   if ( apds.isGestureAvailable() ) {
+    
     switch ( apds.readGesture() ) {
       case DIR_UP:
         Maquina_Estados.evento = UP;
@@ -115,7 +116,7 @@ void LeerGesto() {
         Maquina_Estados.evento = GESTOERROR;
     }
   }
-  attachInterrupt(digitalPinToInterrupt(APDS9960_INT), interruptHandler_Gesture, FALLING);
+  attachInterrupt(APDS9960_INT, interruptHandler_Gesture, FALLING);
 }
 
 void Proceso_Maquina(maquina_estados_struct * Maquina_Estados_puntero) {
@@ -145,7 +146,7 @@ void Proceso_Maquina(maquina_estados_struct * Maquina_Estados_puntero) {
           break;
 
         case START:
-          Serial.println("START");
+        Serial.println("START");
           //Preparamos la pantalla
           screen.setTemplate(4);
           screen.setModeHeader(20, WHITE, BLACK);
@@ -173,32 +174,25 @@ void Proceso_Maquina(maquina_estados_struct * Maquina_Estados_puntero) {
           //Actualiza el tiempo y el dinero
           screen.updateScreen();
           CounterTime++;
-          if (CounterTime >= TIEMPO_LAVADO) {
+          if (CounterTime >= TIEMPO_LAVADO){
             screen.nextStartBMP();
             ITimer2.pauseTimer();
-            Maquina_Estados.estado = STANDBY;
-            Maquina_Estados.evento = START;
-            Maquina_Estados.flag_evento = true;
-
+            Maquina_Estados.estado = SOPORTE;
           }
           break;
 
         case UP:
-          if (ModoTrabajo <= 4)  ModoTrabajo++;
+          if(ModoTrabajo <= 4)  ModoTrabajo++;
           screen.changeModeTo(ModoTrabajo);
-          Serial.println("GESTO UP");
-
           break;
 
         case DOWN:
-          if (ModoTrabajo >= 2)  ModoTrabajo--;
+          if(ModoTrabajo >= 2)  ModoTrabajo--;
           screen.changeModeTo(ModoTrabajo);
-          Serial.println("GESTO DOWN");
-
           break;
 
         default:
-          Serial.println("GESTO ERROR");
+
           break;
       }
       break;
