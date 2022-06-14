@@ -1,0 +1,5 @@
+-Arreglar codigo
+-Tabla de variables
+-Lista de IO
+-Decirle a Rafa que pruebe el boton de la moneda
+-Introducit RF
