@@ -32,10 +32,10 @@
 class Screen {
   private:
     //Timer constants
-    int8_t dmin = 0, umin = 0, dseg = 0, useg = 0;
+    int8_t dmin, umin, dseg, useg;
     int16_t timerxPos = 0, timeryPos = 0;
     uint16_t timerTextColor, timerBackgroundColor;
-    int secs = -1;
+    int secs;
 
     //Mode constants
     int mode = 0;
@@ -56,7 +56,6 @@ class Screen {
     char templtPath[19] = "/Modo_prueba_X.bmp";
 
     //Start screen path
-    uint8_t startScreenNumber = 1;
     char startScreenBMPName[16] = "/Pantalla_X.bmp";
 
 
@@ -65,10 +64,10 @@ class Screen {
 
   public:
     void begin();
-    void nextStartBMP();
+    void startBMP(uint8_t BMP_number);
 
     void setTimer(int16_t atimerxPos, int16_t atimeryPos, uint16_t atimerTextColor, uint16_t atimerBackgroundColor);
-    void updateTimer();
+    void updateTimer(uint16_t asecs);
 
     void setMode(int16_t amodexPos, int16_t amodeyPos, uint16_t amodeTextColor, uint16_t amodeBackgroundColor);
     void setModeHeader(int16_t amodeHeaderxPos, int16_t amodeHeaderyPos, uint16_t amodeHeaderTextColor, uint16_t amodeHeaderBackgroundColor);
@@ -79,6 +78,4 @@ class Screen {
 
     void setPrice(int16_t apricexPos, int16_t apriceyPos, uint16_t apriceTextColor, uint16_t apriceBackgroundColor);
     void updatePrice();
-    
-    void updateScreen();
 };
