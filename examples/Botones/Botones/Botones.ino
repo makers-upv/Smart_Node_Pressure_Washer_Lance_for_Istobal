@@ -1,4 +1,4 @@
-const int SWMonedas = A2, SWCarga = A3, t1 = 500;
+const int SWMonedas = 3, SWCarga = A3, t1 = 500;
 
 void setup(){
   Serial.begin(115200);

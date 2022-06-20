@@ -5,7 +5,8 @@
 SdFat                SD;         // SD card filesystem
 Adafruit_ImageReader reader(SD); // Image-reader object, pass in SD filesys
 
-Adafruit_ST7735 tft = Adafruit_ST7735(tft_CS, tft_DC, TFT_MOSI, TFT_SCLK, tft_RST);
+//Adafruit_ST7735 tft = Adafruit_ST7735(tft_CS, tft_DC, TFT_MOSI, TFT_SCLK, tft_RST);
+Adafruit_ST7735 tft = Adafruit_ST7735(tft_CS, tft_DC, tft_RST);
 ImageReturnCode img_stat; // Status from image-reading functions
 
 void Screen :: erasePrevDigit(int8_t dig, int16_t background) {
