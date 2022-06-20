@@ -85,24 +85,26 @@ void Screen :: begin() {
   img_stat = reader.drawBMP("/Pantalla_1.bmp", tft, 0, 0); //Shows the first initial screen (Istobal logo)
 }
 
-void Screen :: nextStartBMP(){
-  //Updates to next initialisation screen
-  startScreenNumber++;
-  startScreenBMPName[10] = startScreenNumber + 48;
-  img_stat = reader.drawBMP(startScreenBMPName, tft, 0, 0);
+
+void Screen :: startBMP(uint8_t BMP_number){
+  //Changes the BMP on screen (input must be 1, 2 or 3)
+  if(BMP_number == 1 || BMP_number == 2 || BMP_number == 3){
+    startScreenBMPName[10] = BMP_number + 48;
+    stat = reader.drawBMP(startScreenBMPName, tft, 0, 0);
+  }
 }
 
 void Screen :: setTimer(int16_t atimerxPos, int16_t atimeryPos, uint16_t atimerTextColor, uint16_t atimerBackgroundColor) {
   //Saves the received information
+  secs = 0, dmin = 0, umin = 0, dseg = 0, useg = 0;
   timerxPos = atimerxPos;
   timeryPos = atimeryPos;
   timerTextColor = atimerTextColor;
   timerBackgroundColor = atimerBackgroundColor;
-
 }
 
-void Screen :: updateTimer() {
-  secs++; //Sets new time
+void Screen :: updateTimer(uint16_t asecs) {
+  secs = asecs;
   showTimer(); //Updates timer
 }
 
@@ -221,9 +223,4 @@ void Screen :: updatePrice(){
   }else{//If the timer just started, the price is shown as
     tft.print("00,00");
   }
-}
-
-void Screen :: updateScreen(){
-  updateTimer();
-  updatePrice();
 }
