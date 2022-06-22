@@ -2,13 +2,14 @@
 //Librerias en uso:
 #include <SPI.h>
 #include <nRF24L01.h>
-#include <printf.h>
+//#include <printf.h>
 #include <RF24.h>
 #include <RF24_config.h>
 //Constantes de los pines:
 #define CE 9
 #define CSN 10
 #define CANALRF 0xE8E8F0F0E1LL
+static RF24 RF(CE, CSN);
 
 class Comunicacion{
     private:
@@ -23,4 +24,4 @@ class Comunicacion{
     void InterrupcionMensaje();
     uint32_t LeerRF();
     void MostrarMensaje(uint32_t mensaje, int n);
-}
+};

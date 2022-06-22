@@ -1,6 +1,5 @@
 #include "ComunicacionRF.hpp"
 
-RF24 RF (CE, CSN);                      //Declaramos la variable del canal, como en los servos de arduino
 //Funciones:
     void Comunicacion :: ConfigurarComunicacion() {
         msg.p = 0x0;                    //Mensaje que enviaremos para las pruebas
@@ -22,8 +21,8 @@ RF24 RF (CE, CSN);                      //Declaramos la variable del canal, como
         return m;                 //Devolvemos el valor leido
     }
     void Comunicacion :: MostrarMensaje(uint32_t mensaje, int n){
-          UnionMsg m;       //Declaramos una nueva union con la varibale m
-            m.p = mensaje;  //Cargamos el valor en la variable union
+         UnionMsg m;       //Declaramos una nueva union con la varibale m
+        m.p = mensaje;  //Cargamos el valor en la variable union
             if (m.p != 0) { //Si el mensaje es diferente a 0(para evitar lecturas falsas)
                 if (n == 0) Serial.print("Mensaje enviado: ");  //Si n es 0 decimos mensaje enviado
                 if (n == 1) Serial.print("Mensaje recibido: "); //Si n es 1 decimos mensaje recibido
