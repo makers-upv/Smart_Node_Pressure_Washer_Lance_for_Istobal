@@ -1,4 +1,3 @@
-//#include <tftLibrary.hpp>
 //Librerias en uso:
 #include <SPI.h>
 #include <nRF24L01.h>
@@ -6,44 +5,25 @@
 #include <RF24.h>
 #include <RF24_config.h>
 //Variables referentes a la comunicación
-const int IRQ = 8, CE = 9, CSN = 10;             //Declaramos en variables constantes los pines de CE y CSN
+const int IRQ = 3, CE = 4, CSN = 5;             //Declaramos en variables constantes los pines de CE y CSN
 const uint64_t canal = 0xE8E8F0F0E1LL;  //Canal de comunicación
 RF24 RF (CE, CSN);                      //Declaramos la variable del canal, como en los servos de arduino
 //Variables de código
-int t1 = 500;
+int t1 = 5000;
 union UnionMsg {
   uint32_t p;
   uint8_t v[4];
 } msg;
-//Pantalla
-//Screen screen;
 
 void setup() {
   Serial.begin(115200);               //Iniciamos el buffer de comunicacion serie a 9600 baudios
   ConfigurarComuniacion();
-  //ConfiguracionPantalla();
 }
 
 void loop() {
-  EnviarRF(0x112233DD);
+  Serial.println("Me estoy esperando hasta recibir un mensaje");
   delay(t1);
-  //screen.updateScreen();
-  //screen.changeModeTo(1);
 }
-
-/*void ConfiguracionPantalla(){
-  screen.begin();
-  delay(1000);
-  screen.nextStartBMP();
-  delay(1000);
-  screen.nextStartBMP();
-  delay(1000);
-  screen.setTemplate(4);
-  screen.setModeHeader(20, WHITE, BLACK);
-  screen.setMode(62, 80, WHITE, BLACK);
-  screen.setPrice(10, 119, TEMPLATERED, WHITE);
-  screen.setTimer(75, 119, WHITE, TEMPLATERED);
-}*/
 void ConfigurarComuniacion() {
   msg.p = 0x0;                    //Mensaje que enviaremos para las pruebas
   RF.begin();                     //Iniciamos la comunicación RF
