@@ -12,7 +12,7 @@ void setup() {
 }
 
 void loop() {
-  RFCom.EnviarRF(0x112233DD);
+  Serial.println("Me estoy esperando hasta recibir un mensaje");
   delay(t1);
 }
 

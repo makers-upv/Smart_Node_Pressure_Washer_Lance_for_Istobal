@@ -4,9 +4,9 @@
 #include <printf.h>
 #include <RF24.h>
 #include <RF24_config.h>
-//Variables referentes a la comunicación
-const int IRQ = 3, CE = 4, CSN = 5;             //Declaramos en variables constantes los pines de CE y CSN
-const uint64_t canal = 0xE8E8F0F0E1LL;  //Canal de comunicación
+//Variables referentes a la comunicació
+const int IRQ = 3, CE = 9, CSN = 10;             //Declaramos en variables constantes los pines de CE y CSN
+#define CANALRF 0xE8E8F0F0E1LL  //Canal de comunicación
 RF24 RF (CE, CSN);                      //Declaramos la variable del canal, como en los servos de arduino
 //Variables de código
 int t1 = 5000;
@@ -16,22 +16,22 @@ union UnionMsg {
 } msg;
 
 void setup() {
-  Serial.begin(115200);               //Iniciamos el buffer de comunicacion serie a 9600 baudios
+  Serial.begin(115200);             //Iniciamos el buffer de comunicacion serie a 9600 baudios
   ConfigurarComuniacion();
+  attachInterrupt(digitalPinToInterrupt(IRQ), InterrupcionMensaje, FALLING);  //Interrupir el codigo cuando se active el pin 5 por una bajada de la señal
 }
 
 void loop() {
-  Serial.println("Me estoy esperando hasta recibir un mensaje");
+  EnviarRF(0x112233DD);
   delay(t1);
 }
 void ConfigurarComuniacion() {
   msg.p = 0x0;                    //Mensaje que enviaremos para las pruebas
   RF.begin();                     //Iniciamos la comunicación RF
-  RF.openWritingPipe(canal);      //Iniciamos la escritura por el canal RF
-  RF.openReadingPipe(1, canal);   //Abrimos la escucha por el canal RF
+  RF.openWritingPipe(CANALRF);      //Iniciamos la escritura por el canal RF
+  RF.openReadingPipe(1, CANALRF);   //Abrimos la escucha por el canal RF
   RF.startListening();            //Empezamos a escuchar
   RF.maskIRQ(1, 1, 0);            //Solo permitimos que se active el pin de interrupcion cuando recibe datos
-  attachInterrupt(digitalPinToInterrupt(IRQ), InterrupcionMensaje, FALLING);  //Interrupir el codigo cuando se active el pin 5 por una bajada de la señal
 }
 void EnviarRF(uint32_t m) {         //Función que enviara el mensaje que le cargemos
   RF.stopListening();     //Paramos de escuchar el canal
