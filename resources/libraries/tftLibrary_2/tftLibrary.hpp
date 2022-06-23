@@ -46,7 +46,7 @@ class Screen {
     int16_t modeHeaderxPos = 0, modeHeaderyPos = 0;
     uint16_t modeHeaderTextColor, modeHeaderBackgroundColor;
     bool modeHeaderInUse = false, centreModeHeader = false;
-    char modeHeaders[5][20] = {"Mode_1", "Mode_2", "Mode_3", "Mode_4", "Mode_5"};
+    char modeHeaders[6][20] = {"LAVADO", "ESPUMA ACTIVA", "ACLARADO", "SUPER ENCERADO", "SUPER ACLARADO","FIN"};
 
     //Price constants
     int16_t pricexPos = 0, priceyPos = 0;
