@@ -16,11 +16,11 @@ maquina_estados_struct Maquina_Estados = {SOPORTE, CARGANDO, false}; //Estructur
 
 const byte interruptPin_Cargando = 17;
 
-#define EMULATE_GESTURES_BTN
+//#define EMULATE_GESTURES_BTN
 #ifdef EMULATE_GESTURES_BTN
-  const byte interruptPin_Btn_BACK = 16;
-  const byte interruptPin_Btn_NEXT = 15;
-  const byte interruptPin_Btn_EXIT = 14;
+const byte interruptPin_Btn_BACK = 16;
+const byte interruptPin_Btn_NEXT = 15;
+const byte interruptPin_Btn_EXIT = 14;
 #endif
 
 /* TIMER */
@@ -34,14 +34,17 @@ const byte interruptPin_Cargando = 17;
 Screen screen;
 int ModoTrabajo = 1;
 int counterTime = 0;
-const int counterTimeOut = 30;
+const int counterTimeOut = 29;
+const byte pin_screen_OnOff = 2;
 
 /* GESTOS */
-//#define GESTOS
+#define GESTOS
 #ifdef GESTOS
-  #include <Wire.h>
-  #include <SparkFun_APDS9960.h>
-  SparkFun_APDS9960 apds = SparkFun_APDS9960();
+#include <Wire.h>
+#include "paj7620.h"
+uint8_t ges_data = 0, ges_error;
+#define GES_REACTION_TIME 500       // You can adjust the reaction time according to the actual circumstance.
+unsigned long tgesture = 0;
 #endif
 
 /* DEFINICIÓN DE FUNCIONES */
@@ -53,12 +56,19 @@ void interruptHandler_Cargando();
 void interruptHandler_Timer();
 void LAVADO_ON();
 void LAVADO_OFF();
+void TO_CHARGE();
+void screen_turnOff();
+void screen_turnOn();
+
+void resetMCU() {
+  while (1);
+}
 
 void setup() {
 #ifdef DEBUG
   Serial.begin(115200);
   while (!Serial); // wait for serial to be ready
-  for (int i = 0; i < 20; i++) Serial.println();
+  for (int i = 0; i < 50; i++) Serial.println(); // Clear screen
 #endif
 
   /* Inicialización de los pulsadores de simulación de eventos */
@@ -83,7 +93,7 @@ void setup() {
   if (ITimer2.attachInterrupt(TIMER2, interruptHandler_Timer))  Serial.println("Se ha iniciado el temporizador 2 (timer2).");
   else {
     Serial.println("Ha habido un error con el timer2.");
-    while (1);
+    resetMCU();
   }
 #else
   if (!ITimer2.attachInterrupt(TIMER2, interruptHandler_Timer)) while (1);
@@ -92,26 +102,30 @@ void setup() {
 #ifdef GESTOS
   /* Inicialización del sensor de gestos */
 #ifdef DEBUG
-  if (apds.init())  Serial.println("Inicialización del APDS-9960.");
-  else {
-    Serial.println("¡Algo salió mal durante la inicialización de APDS-9960!");
-    while (1);
+  uint8_t error = 0;
+  Serial.println("\nGESTURE SENSOR PAJ7620U2");
+
+  ges_error = paj7620Init();      // initialize Paj7620 registers
+  if (ges_error)
+  {
+    Serial.print("INIT ERROR,CODE:");
+    Serial.println(ges_error);
+    resetMCU();
   }
-  if (apds.enableGestureSensor(true))   Serial.println("El sensor de gestos inicializado correctamente!.");
-  else {
-    Serial.println("¡Algo salió mal durante el inicio del sensor de gestos!");
-    while (1);
+  else
+  {
+    Serial.println("INIT OK");
   }
 #else
-  if (!apds.init()) while (1);
-  if (!apds.enableGestureSensor(true))    while (1);
-  if (!apds.enableProximitySensor(true))  while (1);
+  if (paj7620Init()) resetMCU(); // initialize Paj7620 registers
 #endif
 #endif
 
   /* Inicialización de la pantalla */
-  screen.begin();
-  screen.logoIstobal();
+  pinMode(pin_screen_OnOff, OUTPUT);
+  screen_turnOff();
+  screen.begin(); // TODO: ¿Puede haber error al inicializar la pantalla?
+
 
 #ifdef DEBUG
   Serial.println("LANZA ENCENDIDA");
@@ -131,49 +145,75 @@ void loop() {
   }
 
 #ifdef GESTOS
-  #ifdef DEBUG
-    if ( apds.isGestureAvailable() ) {
-      switch ( apds.readGesture() ) {
-        //      case DIR_UP:
-        //        Serial.println("UP");
-        //        break;
-        case DIR_DOWN:
-          Serial.println("DOWN");
-          interruptHandler_Btn_EXIT();
-          break;
-        case DIR_LEFT:
-          Serial.println("LEFT");
-          interruptHandler_Btn_NEXT();
-          break;
-        case DIR_RIGHT:
-          Serial.println("RIGHT");
+  if (tgesture + GES_REACTION_TIME < millis()) {
+    tgesture = millis();
+#ifdef DEBUG
+    ges_error = paj7620ReadReg(0x43, 1, &ges_data);       // Read Bank_0_Reg_0x43/0x44 for gesture result.
+    if (!ges_error)
+    {
+      switch (ges_data)                   // When different gestures be detected, the variable 'data' will be set to different values by paj7620ReadReg(0x43, 1, &data).
+      {
+        case GES_RIGHT_FLAG:
+          Serial.println("Right");
           interruptHandler_Btn_BACK();
           break;
-        //      case DIR_NEAR:
-        //        Serial.println("NEAR");
-        //        break;
-        //      case DIR_FAR:
-        //        Serial.println("FAR");
-        //        break;
+        case GES_LEFT_FLAG:
+          Serial.println("Left");
+          interruptHandler_Btn_NEXT();
+          break;
+        case GES_UP_FLAG:
+          Serial.println("Up");
+          interruptHandler_Btn_EXIT();
+          break;
+        case GES_DOWN_FLAG:
+          Serial.println("Down");
+          break;
+        case GES_CLOCKWISE_FLAG:
+          Serial.println("Clockwise");
+          break;
+        case GES_COUNT_CLOCKWISE_FLAG:
+          Serial.println("anti-clockwise");
+          break;
         default:
-          Serial.println("NONE");
+          paj7620ReadReg(0x44, 1, &ges_data);
+          if (ges_data == GES_WAVE_FLAG)
+          {
+            Serial.println("wave");
+          }
+          break;
       }
     }
-  #else
-    if ( apds.isGestureAvailable() ) {
-      switch ( apds.readGesture() ) {
-        case DIR_DOWN:
-          interruptHandler_Btn_EXIT();
-          break;
-        case DIR_LEFT:
-          interruptHandler_Btn_NEXT();
-          break;
-        case DIR_RIGHT:
+#else
+    ges_error = paj7620ReadReg(0x43, 1, &ges_data);       // Read Bank_0_Reg_0x43/0x44 for gesture result.
+    if (!ges_error)
+    {
+      switch (ges_data)                   // When different gestures be detected, the variable 'data' will be set to different values by paj7620ReadReg(0x43, 1, &data).
+      {
+        case GES_RIGHT_FLAG:
           interruptHandler_Btn_BACK();
           break;
+        case GES_LEFT_FLAG:
+          interruptHandler_Btn_NEXT();
+          break;
+        case GES_UP_FLAG:
+          interruptHandler_Btn_EXIT();
+          break;
+          //      case GES_DOWN_FLAG:
+          //        break;
+          //      case GES_CLOCKWISE_FLAG:
+          //        break;
+          //      case GES_COUNT_CLOCKWISE_FLAG:
+          //        break;
+          //      default:
+          //        paj7620ReadReg(0x44, 1, &ges_data);
+          //        if (ges_data == GES_WAVE_FLAG)
+          //        {
+          //        }
+          //        break;
       }
     }
-  #endif
+#endif
+  }
 #endif
 
 
@@ -187,7 +227,8 @@ void Proceso_Maquina(maquina_estados_struct * Maquina_Estados_puntero) {
 #ifdef DEBUG
           Serial.println("SOPORTE -> NO_CARGANDO -> STANDBY");
 #endif
-          screen.greyScreen();
+          screen_turnOn();
+          screen.redScreen();
           screen.logoIstobal();
           delay(1000);
           screen.welcome();
@@ -209,8 +250,7 @@ void Proceso_Maquina(maquina_estados_struct * Maquina_Estados_puntero) {
 #ifdef DEBUG
           Serial.println("STANDBY -> CARGANDO -> SOPORTE");
 #endif
-          screen.redScreen();
-          screen.logoIstobal();
+          TO_CHARGE();
           Maquina_Estados.estado = SOPORTE;
           break;
         case NEXT:
@@ -232,6 +272,7 @@ void Proceso_Maquina(maquina_estados_struct * Maquina_Estados_puntero) {
         case CARGANDO:
           Maquina_Estados.estado = SOPORTE;
           LAVADO_OFF();
+          TO_CHARGE();
 #ifdef DEBUG
           Serial.println("LAVADO -> FINALIZADO -> CARGANDO -> SOPORTE");
 #endif
@@ -342,6 +383,11 @@ void interruptHandler_Timer() {
 }
 
 void LAVADO_ON() {
+#ifdef DEBUG
+  Serial.println("LAVADO ENMARCHA");
+  Serial.print("MODO DE LAVADO: ");
+  Serial.println(ModoTrabajo);
+#endif
   //Preparamos la pantalla
   screen.setTemplate(4);
   screen.setModeHeader(20, WHITE, BLACK);
@@ -350,23 +396,42 @@ void LAVADO_ON() {
   screen.setTimer(75, 119, WHITE, TEMPLATERED);
   screen.changeModeTo(ModoTrabajo);
   screen.clearTimeAndMoney();
-  screen.updateScreen(); //Actualiza el tiempo y el dinero
   ITimer2.resumeTimer();  //Iniciamos el temporizador
-#ifdef DEBUG
-  Serial.println("LAVADO ENMARCHA");
-  Serial.print("MODO DE LAVADO: ");
-  Serial.println(ModoTrabajo);
-#endif
+  screen.updateScreen(); //Actualiza el tiempo y el dinero
 }
 
 void LAVADO_OFF() {
   ITimer2.pauseTimer();
+  screen.changeModeTo(6);
   ModoTrabajo = 1;
   counterTime = 0;
-  delay(5000); /* PANTALLA DE UNOS SEGUNDOS CON LA INFO DEL LAVADO */
-  screen.greyScreen();
-  screen.logoIstobal();
+  delay(6000); /* TODO: PANTALLA DE UNOS SEGUNDOS CON LA INFO DEL LAVADO */
+  if (Maquina_Estados.estado != SOPORTE) {
+    screen.redScreen();
+    screen.logoIstobal();
+    delay(1000);
+    screen.welcome();
+    delay(2000);
+    screen.waveStart();
+    delay(2000);
+  }
 #ifdef DEBUG
   Serial.println("FIN DEL LAVADO");
 #endif
+}
+
+void TO_CHARGE() {
+  screen.redScreen();
+  screen.logoIstobal();
+  delay(1000);
+  screen.greyScreen();
+  screen_turnOff();
+}
+
+void screen_turnOff() {
+  digitalWrite(pin_screen_OnOff, LOW);
+}
+
+void screen_turnOn() {
+  digitalWrite(pin_screen_OnOff, HIGH);
 }
