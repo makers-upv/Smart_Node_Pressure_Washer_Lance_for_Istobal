@@ -12,11 +12,11 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("Me estoy esperando hasta recibir un mensaje");
-  delay(t1);
+
 }
 
 void InterrupcionMensaje() {        //Función que se activará cuando hagas una interrupción, por el pin IRQ
-  RFCom.msg.p = RFCom.LeerRF();                 //Damos a msg.p el valor que leamos por el canal RF
+  RFCom.msg.p = RFCom.LeerRF(TestNodo);                 //Damos a msg.p el valor que leamos por el canal RF
   RFCom.MostrarMensaje(RFCom.msg.p, 1);         //Mostramos el mensaje (Solo para pruebas)
+  
 }

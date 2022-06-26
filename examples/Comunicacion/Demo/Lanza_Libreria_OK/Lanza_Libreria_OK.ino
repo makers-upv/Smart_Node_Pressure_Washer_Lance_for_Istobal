@@ -2,7 +2,7 @@
 #include <ComunicacionRF.hpp>
 //Variables de código
 #define IRQ 3
-#define NODO 1
+
   int t1 = 1500;
   Comunicacion RFCom;
   
@@ -13,15 +13,13 @@ void setup() {
 }
 
 void loop() {
-  int i=0;
-  while(i<10){
-  RFCom.CambiarModo(NODO, i);
-  delay(t1); 
-  i++;
-  }
+  RFCom.Estado(TestNodo, 1);
+  RFCom.CambiarModoLimpieza(TestNodo, 1);
+  RFCom.CodigoError(TestNodo, 0x1);
+  delay(t1);
 }
 
 void InterrupcionMensaje() {        //Función que se activará cuando hagas una interrupción, por el pin IRQ
-  RFCom.msg.p = RFCom.LeerRF();                 //Damos a msg.p el valor que leamos por el canal RF
+  RFCom.msg.p = RFCom.LeerRF(TestNodo);                 //Damos a msg.p el valor que leamos por el canal RF
   RFCom.MostrarMensaje(RFCom.msg.p, 1);         //Mostramos el mensaje (Solo para pruebas)
 }
