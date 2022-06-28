@@ -14,7 +14,10 @@ struct maquina_estados_struct {
 
 maquina_estados_struct Maquina_Estados = {SOPORTE, CARGANDO, false}; //Estructura que nos almacenará las variables de la maquina de estado.
 
+//#define EMULATE_CHARGE_BTN
+#ifdef EMULATE_CHARGE_BTN
 const byte interruptPin_Cargando = 17;
+#endif
 
 //#define EMULATE_GESTURES_BTN
 #ifdef EMULATE_GESTURES_BTN
@@ -47,6 +50,16 @@ uint8_t ges_data = 0, ges_error;
 unsigned long tgesture = 0;
 #endif
 
+// CARGA
+#define CHARGE
+#ifdef CHARGE
+#define CHARGE_REACTION_TIME 500       // You can adjust the reaction time according to the actual circumstance.
+#define CHARGE_THRESHOLD 800 // Aprox ??V ->
+const byte pin_Cargando = A7;
+int carga_value = 0;  // variable to store the value coming from the sensor
+unsigned long tcharge = 0;
+#endif
+
 /* DEFINICIÓN DE FUNCIONES */
 void Proceso_Maquina(maquina_estados_struct *Maquina_Estados_puntero);
 void interruptHandler_Btn_NEXT();
@@ -77,14 +90,18 @@ void setup() {
   pinMode(interruptPin_Btn_BACK, INPUT_PULLUP);
   pinMode(interruptPin_Btn_EXIT, INPUT_PULLUP);
 #endif
+#ifdef EMULATE_CHARGE_BTN
   pinMode(interruptPin_Cargando, INPUT_PULLUP);
+#endif
 
 #ifdef EMULATE_GESTURES_BTN
   attachInterrupt(digitalPinToInterrupt(interruptPin_Btn_BACK), interruptHandler_Btn_BACK, RISING);
   attachInterrupt(digitalPinToInterrupt(interruptPin_Btn_NEXT), interruptHandler_Btn_NEXT, RISING);
   attachInterrupt(digitalPinToInterrupt(interruptPin_Btn_EXIT), interruptHandler_Btn_EXIT, RISING);
 #endif
+#ifdef EMULATE_CHARGE_BTN
   attachInterrupt(digitalPinToInterrupt(interruptPin_Cargando), interruptHandler_Cargando, RISING);
+#endif
 
   /* Inicialización del Temporizador */
   ITimer2.init();
@@ -118,6 +135,12 @@ void setup() {
   }
 #else
   if (paj7620Init()) resetMCU(); // initialize Paj7620 registers
+#endif
+#endif
+
+#ifdef CHARGE
+#ifdef DEBUG
+
 #endif
 #endif
 
@@ -198,20 +221,51 @@ void loop() {
         case GES_UP_FLAG:
           interruptHandler_Btn_EXIT();
           break;
-          //      case GES_DOWN_FLAG:
-          //        break;
-          //      case GES_CLOCKWISE_FLAG:
-          //        break;
-          //      case GES_COUNT_CLOCKWISE_FLAG:
-          //        break;
-          //      default:
-          //        paj7620ReadReg(0x44, 1, &ges_data);
-          //        if (ges_data == GES_WAVE_FLAG)
-          //        {
-          //        }
-          //        break;
       }
     }
+#endif
+  }
+#endif
+
+#ifdef GESTOS
+  if (tcharge + CHARGE_REACTION_TIME < millis()) {
+    tcharge = millis();
+#ifdef DEBUG
+    carga_value = analogRead(pin_Cargando);
+    Serial.print("Analog read charge pin: ");
+    Serial.println(carga_value);
+    
+    if(Maquina_Estados.estado == SOPORTE) {
+      if(carga_value < CHARGE_THRESHOLD) {
+        Serial.println("EVENTO: NO CARGANDO");
+        Maquina_Estados.evento = NO_CARGANDO;
+        Maquina_Estados.flag_evento = true;       
+      }
+//      Serial.println("NO EVENTO");
+    }
+    else {
+      if(carga_value > CHARGE_THRESHOLD) {
+        Serial.println("EVENTO: CARGANDO");
+        Maquina_Estados.evento = CARGANDO;
+        Maquina_Estados.flag_evento = true;       
+      }
+//      Serial.println("NO EVENTO");      
+    }
+#else
+    carga_value = analogRead(pin_Cargando);
+    
+    if(Maquina_Estados.estado == SOPORTE) {
+      if(carga_value < CHARGE_THRESHOLD) {
+        Maquina_Estados.evento = NO_CARGANDO;
+        Maquina_Estados.flag_evento = true;       
+      }
+    }
+    else {
+      if(carga_value > CHARGE_THRESHOLD) {
+        Maquina_Estados.evento = CARGANDO;
+        Maquina_Estados.flag_evento = true;       
+      }
+    }  
 #endif
   }
 #endif
@@ -365,11 +419,13 @@ void interruptHandler_Btn_EXIT() {
   Maquina_Estados.flag_evento = true;
 }
 
+#ifdef EMULATE_CHARGE_BTN
 void interruptHandler_Cargando() {
   if (Maquina_Estados.estado == SOPORTE) Maquina_Estados.evento = NO_CARGANDO;
   else Maquina_Estados.evento = CARGANDO;
   Maquina_Estados.flag_evento = true;
 }
+#endif
 
 void interruptHandler_Timer() {
   if (counterTime < counterTimeOut) {
