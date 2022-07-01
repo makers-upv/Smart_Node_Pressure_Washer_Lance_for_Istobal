@@ -1,5 +1,17 @@
 #define DEBUG // Activar proceso de debugging
 
+/* COMUNICACIÓN */
+#define COMUNICATIONS
+#ifdef COMUNICATIONS
+#include <ComunicacionRF.hpp>
+unsigned long t_msg_send = 0;
+unsigned long t_msg_wait = 200;
+bool t_msg_recv = false;
+Comunicacion RFCom;
+#define COM_IRQ 3
+int temp_Modo_Trabajo;
+#endif
+
 /* MAQUINA DE ESTADOS */
 /* LA EJECUCIÓN SE PRODUCE CUANDO HAY UN EVENTO */
 /* ENTRE CAMBIO DE ESTADOS */
@@ -37,7 +49,7 @@ const byte interruptPin_Btn_EXIT = 14;
 Screen screen;
 int ModoTrabajo = 1;
 int counterTime = 0;
-const int counterTimeOut = 29;
+const int counterTimeOut = 59; // SEGUNDOS - 1 JEJEJ
 const byte pin_screen_OnOff = 2;
 
 /* GESTOS */
@@ -53,11 +65,13 @@ unsigned long tgesture = 0;
 // CARGA
 #define CHARGE
 #ifdef CHARGE
-#define CHARGE_REACTION_TIME 500       // You can adjust the reaction time according to the actual circumstance.
-#define CHARGE_THRESHOLD 800 // Aprox ??V ->
+#define CHARGE_REACTION_TIME 100       // You can adjust the reaction time according to the actual circumstance.
+#define CHARGE_THRESHOLD 840 // Aprox ??V ->
 const byte pin_Cargando = A7;
 int carga_value = 0;  // variable to store the value coming from the sensor
 unsigned long tcharge = 0;
+int carga_cont = 0;
+const int carga_cont_th = 10;
 #endif
 
 /* DEFINICIÓN DE FUNCIONES */
@@ -67,7 +81,8 @@ void interruptHandler_Btn_BACK();
 void interruptHandler_Btn_EXIT();
 void interruptHandler_Cargando();
 void interruptHandler_Timer();
-void LAVADO_ON();
+void interruptHandler_IN_MSG();
+boolean LAVADO_ON();
 void LAVADO_OFF();
 void TO_CHARGE();
 void screen_turnOff();
@@ -138,17 +153,16 @@ void setup() {
 #endif
 #endif
 
-#ifdef CHARGE
-#ifdef DEBUG
-
-#endif
+  /* Inicialización de comunicaciones */
+#ifdef COMUNICATIONS
+  RFCom.ConfigurarComunicacion();
+  attachInterrupt(digitalPinToInterrupt(COM_IRQ), interruptHandler_IN_MSG, FALLING);
 #endif
 
   /* Inicialización de la pantalla */
   pinMode(pin_screen_OnOff, OUTPUT);
   screen_turnOff();
-  screen.begin(); // TODO: ¿Puede haber error al inicializar la pantalla?
-
+  screen.begin(); // TODO: ¿Puede haber error al inicializar la pantalla? -> SI
 
 #ifdef DEBUG
   Serial.println("LANZA ENCENDIDA");
@@ -232,40 +246,46 @@ void loop() {
     tcharge = millis();
 #ifdef DEBUG
     carga_value = analogRead(pin_Cargando);
-    Serial.print("Analog read charge pin: ");
-    Serial.println(carga_value);
-    
-    if(Maquina_Estados.estado == SOPORTE) {
-      if(carga_value < CHARGE_THRESHOLD) {
-        Serial.println("EVENTO: NO CARGANDO");
-        Maquina_Estados.evento = NO_CARGANDO;
-        Maquina_Estados.flag_evento = true;       
+    //    Serial.print("Analog read charge pin: ");
+    //    Serial.println(carga_value);
+
+    if (Maquina_Estados.estado == SOPORTE) {
+      if (carga_value < CHARGE_THRESHOLD) {
+        if (carga_cont > carga_cont_th) {
+          Serial.println("EVENTO: NO CARGANDO");
+          Maquina_Estados.evento = NO_CARGANDO;
+          Maquina_Estados.flag_evento = true;
+          carga_cont = 0;
+        } else {
+          carga_cont++;
+        }
       }
-//      Serial.println("NO EVENTO");
+      //      Serial.println("NO EVENTO");
     }
     else {
-      if(carga_value > CHARGE_THRESHOLD) {
+      carga_cont = 0;
+      if (carga_value > CHARGE_THRESHOLD) {
         Serial.println("EVENTO: CARGANDO");
         Maquina_Estados.evento = CARGANDO;
-        Maquina_Estados.flag_evento = true;       
+        Maquina_Estados.flag_evento = true;
       }
-//      Serial.println("NO EVENTO");      
+      //      Serial.println("NO EVENTO");
     }
 #else
     carga_value = analogRead(pin_Cargando);
-    
-    if(Maquina_Estados.estado == SOPORTE) {
-      if(carga_value < CHARGE_THRESHOLD) {
+
+    if (Maquina_Estados.estado == SOPORTE) {
+      if (carga_value < CHARGE_THRESHOLD) {
         Maquina_Estados.evento = NO_CARGANDO;
-        Maquina_Estados.flag_evento = true;       
+        Maquina_Estados.flag_evento = true;
       }
     }
     else {
-      if(carga_value > CHARGE_THRESHOLD) {
+      if (carga_value > CHARGE_THRESHOLD) {
         Maquina_Estados.evento = CARGANDO;
-        Maquina_Estados.flag_evento = true;       
+        Maquina_Estados.flag_evento = true;
       }
-    }  
+    }
 #endif
   }
 #endif
@@ -311,8 +331,9 @@ void Proceso_Maquina(maquina_estados_struct * Maquina_Estados_puntero) {
 #ifdef DEBUG
           Serial.println("STANDBY -> NEXT -> LAVADO");
 #endif
-          Maquina_Estados.estado = LAVADO;
-          LAVADO_ON();
+          if (LAVADO_ON()) {
+            Maquina_Estados.estado = LAVADO;
+          }
           break;
         default:
 #ifdef DEBUG
@@ -346,7 +367,21 @@ void Proceso_Maquina(maquina_estados_struct * Maquina_Estados_puntero) {
 #endif
           break;
         case NEXT:
+
           if (ModoTrabajo < 5) {
+
+              temp_Modo_Trabajo = ModoTrabajo + 1;
+
+              t_msg_recv = false;
+              RFCom.CambiarModoLimpieza(TestNodo, temp_Modo_Trabajo);
+              t_msg_send = millis();
+              while(millis() < t_msg_send + t_msg_wait);
+            
+              if(!t_msg_recv) {
+  #ifdef DEBUG
+              Serial.println("LAVADO -> LA ESTACIÓN PASA DE MI CARA");
+  #endif
+              } else {
             ModoTrabajo++;
             screen.changeModeTo(ModoTrabajo);
 #ifdef DEBUG
@@ -354,6 +389,8 @@ void Proceso_Maquina(maquina_estados_struct * Maquina_Estados_puntero) {
             Serial.print("MODO DE LAVADO: ");
             Serial.println(ModoTrabajo);
 #endif
+              t_msg_recv = false;
+              }
           } else {
             // FINALIZANDO LAVADO
             Maquina_Estados.estado = STANDBY;
@@ -366,11 +403,26 @@ void Proceso_Maquina(maquina_estados_struct * Maquina_Estados_puntero) {
           break;
         case BACK:
           if (ModoTrabajo > 1) {
-            ModoTrabajo--;
-            screen.changeModeTo(ModoTrabajo);
+
+            temp_Modo_Trabajo = ModoTrabajo - 1;
+
+            t_msg_recv = false;
+            RFCom.CambiarModoLimpieza(TestNodo, temp_Modo_Trabajo);
+            t_msg_send = millis();
+            while (millis() < t_msg_send + t_msg_wait);
+
+            if (!t_msg_recv) {
 #ifdef DEBUG
-            Serial.println("LAVADO -> DECREMENTANDO MODO");
+              Serial.println("LAVADO -> LA ESTACIÓN PASA DE MI CARA");
 #endif
+            } else {
+              ModoTrabajo--;
+              screen.changeModeTo(ModoTrabajo);
+#ifdef DEBUG
+              Serial.println("LAVADO -> DECREMENTANDO MODO");
+#endif
+              t_msg_recv = false;
+            }
           }
 #ifdef DEBUG
           Serial.print("MODO DE LAVADO: ");
@@ -438,7 +490,32 @@ void interruptHandler_Timer() {
   Maquina_Estados.flag_evento = true;
 }
 
-void LAVADO_ON() {
+#ifdef COMUNICATIONS
+void interruptHandler_IN_MSG() {
+  RFCom.msg.p = RFCom.LeerRF(TestNodo); //Damos a msg.p el valor que leamos por el canal RF
+  if (RFCom.msg.v[2] == 0x01 && RFCom.msg.v[1] == 0xFF) {
+    // ACK
+    t_msg_recv = true;
+  }
+}
+#endif
+
+boolean LAVADO_ON() {
+
+  t_msg_recv = false;
+  RFCom.CambiarModoLimpieza(TestNodo, ModoTrabajo);
+  t_msg_send = millis();
+  while (millis() < t_msg_send + t_msg_wait);
+
+  if (!t_msg_recv) {
+#ifdef DEBUG
+    Serial.println("LAVADO ABORTADO");
+#endif
+    return false;
+  } else {
+    t_msg_recv = false;
+  }
+
 #ifdef DEBUG
   Serial.println("LAVADO ENMARCHA");
   Serial.print("MODO DE LAVADO: ");
@@ -454,11 +531,35 @@ void LAVADO_ON() {
   screen.clearTimeAndMoney();
   ITimer2.resumeTimer();  //Iniciamos el temporizador
   screen.updateScreen(); //Actualiza el tiempo y el dinero
+
+  return true;
 }
 
 void LAVADO_OFF() {
   ITimer2.pauseTimer();
   screen.changeModeTo(6);
+
+  int cont = 0;
+  while(cont < 3){
+      t_msg_recv = false;
+      RFCom.CambiarModoLimpieza(TestNodo, 6);
+      t_msg_send = millis();
+      while(millis() < t_msg_send + t_msg_wait);
+      cont++;
+      if(t_msg_recv) cont = 3;
+  }
+if(t_msg_recv) {
+  t_msg_recv = false;
+#ifdef DEBUG
+  Serial.println("OK FIN");
+#endif
+} else {
+#ifdef DEBUG
+  Serial.println("NO OK");
+#endif  
+}
+
+  
   ModoTrabajo = 1;
   counterTime = 0;
   delay(6000); /* TODO: PANTALLA DE UNOS SEGUNDOS CON LA INFO DEL LAVADO */
@@ -471,6 +572,7 @@ void LAVADO_OFF() {
     screen.waveStart();
     delay(2000);
   }
+
 #ifdef DEBUG
   Serial.println("FIN DEL LAVADO");
 #endif

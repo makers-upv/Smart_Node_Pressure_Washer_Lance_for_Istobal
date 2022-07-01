@@ -3,7 +3,13 @@
 //Funciones:
     void Comunicacion :: ConfigurarComunicacion() {
         msg.p = 0x0;                    //Mensaje que enviaremos para las pruebas
-        RF.begin();                     //Iniciamos la comunicación RF
+
+        if(!RF.begin()) {
+            Serial.println("Error al inicializar el dispositivo");
+            while(1);
+        }
+
+        //RF.begin();                     //Iniciamos la comunicación RF
         RF.openWritingPipe(CANALRF);      //Iniciamos la escritura por el canal RF
         RF.openReadingPipe(1, CANALRF);   //Abrimos la escucha por el canal RF
         RF.startListening();            //Empezamos a escuchar
@@ -19,6 +25,7 @@
         UnionMsg msgReceived;
         if (RF.available()) RF.read(&msgReceived.p, sizeof(msgReceived.p)); //Leemos el mensaje y lo guardamos en la variable antes creada
         //Comprobamos si el CRC es correcto
+        Serial.println(",");
         if(msgReceived.v[3]==TestNodo){
             if (msgReceived.v[0]==TestCRC){
                 return msgReceived.p;                 //Devolvemos el valor leido         
@@ -27,11 +34,13 @@
                 Serial.println("Mensaje NO_OK");
                 return 0;
             }                      
-        }  
+        }
+        return 0;
     }
     void Comunicacion :: MostrarMensaje(uint32_t mensaje, int n){
         UnionMsg m;       //Declaramos una nueva union con la varibale m
         m.p = mensaje;  //Cargamos el valor en la variable union
+        //Serial.println(".");
         if (m.p != 0) { //Si el mensaje es diferente a 0(para evitar lecturas falsas)
             if (n == 0) Serial.print("Mensaje enviado: ");  //Si n es 0 decimos mensaje enviado
             if (n == 1) Serial.print("Mensaje recibido: "); //Si n es 1 decimos mensaje recibido

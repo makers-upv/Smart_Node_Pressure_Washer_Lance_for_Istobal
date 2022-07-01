@@ -8,6 +8,7 @@
 //Constantes de los pines:
 #define CE 9
 #define CSN 10
+
 #define CANALRF 0xE8E8F0F0E1LL
 static RF24 RF(CE, CSN);
 //Constantes de uso

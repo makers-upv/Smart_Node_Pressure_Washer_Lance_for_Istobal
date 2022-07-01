@@ -3,20 +3,24 @@
 //Variables de código
 #define IRQ 3
 
-  int t1 = 1500;
+  int t1 = 1000;
   Comunicacion RFCom;
   
 void setup() {
   Serial.begin(115200);             //Iniciamos el buffer de comunicacion serie a 9600 baudios
+  while(!Serial);
   RFCom.ConfigurarComunicacion();
-  attachInterrupt(digitalPinToInterrupt(IRQ), InterrupcionMensaje, FALLING);  //Interrupir el codigo cuando se active el pin 5 por una bajada de la señal
+  attachInterrupt(digitalPinToInterrupt(IRQ), InterrupcionMensaje, FALLING);
 }
 
 void loop() {
   RFCom.Estado(TestNodo, 1);
-  RFCom.CambiarModoLimpieza(TestNodo, 1);
-  RFCom.CodigoError(TestNodo, 0x1);
+//  RFCom.CambiarModoLimpieza(TestNodo, 1);
+//  RFCom.CodigoError(TestNodo, 0x1);
   delay(t1);
+//  RFCom.MostrarMensaje(RFCom.msg.p, 1);         //Mostramos el mensaje (Solo para pruebas)
+//  Serial.println("--------------------------------");
+//  delay(t1);
 }
 
 void InterrupcionMensaje() {        //Función que se activará cuando hagas una interrupción, por el pin IRQ
