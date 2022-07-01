@@ -40,7 +40,7 @@ const byte interruptPin_Btn_EXIT = 14;
 
 /* TIMER */
 #define USE_TIMER_2 true // TIMER EN USO - TIMER EN USO
-#include <megaAVR_TimerInterrupt.h>
+//#include <megaAVR_TimerInterrupt.h>
 #include <megaAVR_TimerInterrupt.hpp>
 #define TIMER2 1  // Frecuencia (Hz)
 
