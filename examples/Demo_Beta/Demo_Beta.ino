@@ -66,7 +66,7 @@ unsigned long tgesture = 0;
 #define CHARGE
 #ifdef CHARGE
 #define CHARGE_REACTION_TIME 100       // You can adjust the reaction time according to the actual circumstance.
-#define CHARGE_THRESHOLD 840 // Aprox ??V ->
+#define CHARGE_THRESHOLD 800 // Aprox ??V ->
 const byte pin_Cargando = A7;
 int carga_value = 0;  // variable to store the value coming from the sensor
 unsigned long tcharge = 0;
@@ -192,15 +192,16 @@ void loop() {
       {
         case GES_RIGHT_FLAG:
           Serial.println("Right");
-          interruptHandler_Btn_BACK();
+          interruptHandler_Btn_NEXT();
           break;
         case GES_LEFT_FLAG:
           Serial.println("Left");
-          interruptHandler_Btn_NEXT();
+          interruptHandler_Btn_BACK();
+          
           break;
         case GES_UP_FLAG:
           Serial.println("Up");
-          interruptHandler_Btn_EXIT();
+//          interruptHandler_Btn_EXIT();
           break;
         case GES_DOWN_FLAG:
           Serial.println("Down");
@@ -227,14 +228,14 @@ void loop() {
       switch (ges_data)                   // When different gestures be detected, the variable 'data' will be set to different values by paj7620ReadReg(0x43, 1, &data).
       {
         case GES_RIGHT_FLAG:
-          interruptHandler_Btn_BACK();
-          break;
-        case GES_LEFT_FLAG:
           interruptHandler_Btn_NEXT();
           break;
-        case GES_UP_FLAG:
-          interruptHandler_Btn_EXIT();
+        case GES_LEFT_FLAG:
+          interruptHandler_Btn_BACK();
           break;
+//        case GES_UP_FLAG:
+//          interruptHandler_Btn_EXIT();
+//          break;
       }
     }
 #endif
@@ -246,8 +247,8 @@ void loop() {
     tcharge = millis();
 #ifdef DEBUG
     carga_value = analogRead(pin_Cargando);
-    //    Serial.print("Analog read charge pin: ");
-    //    Serial.println(carga_value);
+        Serial.print("Analog read charge pin: ");
+        Serial.println(carga_value);
 
     if (Maquina_Estados.estado == SOPORTE) {
       if (carga_value < CHARGE_THRESHOLD) {
@@ -259,6 +260,8 @@ void loop() {
         } else {
           carga_cont++;
         }
+      } else {
+          carga_cont = 0;
       }
       //      Serial.println("NO EVENTO");
     }
